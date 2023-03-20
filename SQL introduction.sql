@@ -277,3 +277,20 @@ HAVING AVG(esame.voto) > (SELECT AVG(esame.voto)
                           FROM esame, studente
                           WHERE esame.matr = studente.matr
 						  AND studente.s_nome = 'Lucia Quaranta');
+						  
+						  
+-- Studenti che hanno la media più alta in assoluto --				  
+SELECT studente.s_nome, AVG(esame.voto)
+FROM studente, esame
+WHERE esame.matr = studente.matr
+GROUP BY studente.s_nome
+HAVING AVG(esame.voto) >= ALL(SELECT AVG(esame.voto) -- Si mette >= perchè così vengono conteggiati tutti --
+                          FROM esame
+                          GROUP BY esame.matr);
+			  
+-- Per ogni corso di cui abbiamo l'esame mostra la media dei voti sostenuto da più di due studenti  -- 
+SELECT COUNT(esame.voto), esame.cc, corso.c_nome, MIN(esame.voto), MAX(esame.voto), AVG(esame.voto) 
+FROM corso, esame
+WHERE corso.cc=esame.cc
+GROUP BY corso.c_nome, esame.cc
+HAVING COUNT(esame.voto)>3;    
