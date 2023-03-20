@@ -294,3 +294,12 @@ FROM corso, esame
 WHERE corso.cc=esame.cc
 GROUP BY corso.c_nome, esame.cc
 HAVING COUNT(esame.voto)>3;    
+
+-- Trovare il docente che ha dato il voto più basso --
+SELECT  docente.cd, docente.d_nome, MAX(esame.voto),MIN(esame.voto), AVG(esame.voto), COUNT(esame.voto)
+FROM esame, corso, docente
+WHERE esame.cc = corso.cc
+AND corso.cd = docente.cd
+GROUP BY docente.cd, docente.d_nome
+HAVING MIN(esame.voto) <= (SELECT MIN(esame.voto)
+                           FROM esame);
