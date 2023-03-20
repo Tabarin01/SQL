@@ -131,3 +131,149 @@ SELECT studente.s_nome
 FROM studente
 WHERE studente.matr NOT IN (SELECT esame.matr FROM esame);
 
+SELECT COUNT(*)
+FROM studente
+WHERE studente.citta = 'MO';
+
+SELECT COUNT(*), count(studente.matr), count(studente.citta)
+FROM studente;
+
+SELECT COUNT(*), count(studente.matr), count(studente.citta), count(studente.matr)- count(studente.citta)
+FROM studente;
+
+SELECT COUNT(*), COUNT(DISTINCT studente.a_corso), count(studente.matr), count(studente.citta), count(studente.matr)- count(studente.citta)
+FROM studente;
+
+SELECT COUNT(*), COUNT(DISTINCT studente.a_corso), count(studente.matr), count(DISTINCT studente.citta), count(studente.matr)- count(studente.citta)
+FROM studente;
+
+SELECT COUNT(*)
+FROM studente
+WHERE citta IS NULL;             
+
+SELECT COUNT(*), min(esame.voto), MAX(esame.voto), AVG(esame.voto), sum(esame.voto)/COUNT(*)   
+FROM esame
+WHERE esame.matr = 'M1';
+
+SELECT studente.s_nome, COUNT(*), min(esame.voto), MAX(esame.voto), AVG(esame.voto), sum(esame.voto)/COUNT(*)   
+FROM esame,studente
+WHERE esame.matr = studente.matr
+and studente.s_nome = 'Lucia Quaranta';
+
+SELECT COUNT(*), min(esame.voto), MAX(esame.voto), AVG(esame.voto), sum(esame.voto)/COUNT(*)   
+FROM esame,studente
+WHERE esame.matr = studente.matr
+and studente.s_nome like 'Lucia%';
+
+SELECT COUNT(*), min(esame.voto), MAX(esame.voto), AVG(esame.voto), sum(esame.voto)/COUNT(*)   
+FROM esame,corso,docente
+WHERE esame.cc = corso.cc
+and corso.cd=docente.cd
+and docente.d_nome = 'Paolo Rossi';
+
+SELECT *
+FROM docente, corso, esame
+WHERE docente.cd = corso.cd
+AND corso.cc = esame.cc
+AND docente.d_nome LIKE 'Paolo%';
+
+-- Selezione del numero di studenti che hanno sostenuto almeno un'esame -- 
+
+-- modo con count--
+SELECT COUNT(DISTINCT esame.matr), COUNT(*)/COUNT(DISTINCT esame.matr)
+FROM esame;
+-- attraverso due tabelle --
+SELECT COUNT(DISTINCT studente.s_nome)
+FROM esame, studente
+WHERE esame.matr = studente.matr;
+
+-- stessa struttura cambio chiave, da matricola a codice corso -- 
+SELECT COUNT(DISTINCT esame.cc), COUNT(*)/COUNT(DISTINCT esame.cc)
+FROM esame;
+-- --
+SELECT COUNT(DISTINCT esame.cc, esame.matr), COUNT(*)/COUNT(DISTINCT esame.cc) as 'mia'
+FROM esame;
+
+-- Quali sono gli studenti con l'anno di corso minore del massimo presente --
+SELECT COUNT(*)
+FROM studente
+WHERE studente.a_corso < (SELECT MAX(a_corso)
+                          FROM studente); 
+                          
+-- Studenti non frequentanti il min corso  =ANYvuol dire appartiene, mentre NOT IN è diverso da ALL--
+SELECT COUNT(*)
+FROM studente
+WHERE studente.a_corso > (SELECT MIN(a_corso)
+                          FROM studente); 
+                          
+-- Massimo voto di ogni matricola, per ogni esame cerco il voto massimo raggruppando le matricole e prendendo da esse il MAX voto--
+SELECT esame.matr, MAX(esame.voto)
+FROM esame
+GROUP BY esame.matr;
+
+-- Minimo, massimo e media dei voti di ogni studente --
+SELECT esame.matr, studente.s_nome,MAX(esame.voto),MIN(esame.voto),AVG(esame.voto), COUNT(*)
+FROM esame, studente
+WHERE esame.matr =studente.matr
+GROUP BY esame.matr, studente.s_nome;
+
+-- Per ogni nome di corso, quanti esami sono stati verbalizzati, qual è il minimo, il massimo e la media --
+SELECT COUNT(esame.cc), corso.c_nome, MIN(esame.voto), MAX(esame.voto), AVG(esame.voto)
+FROM corso, esame
+WHERE corso.cc=esame.cc
+GROUP BY corso.cc, esame.cc;
+
+-- Per ogni docente vogliamo sapere quanti esami ha fatto, voto eccetera. Per far comparire un solo record bisogna raggruppare solamente per il soggetto in questione. --
+SELECT docente.cd, docente.d_nome, MIN(esame.voto), MAX(esame.voto), AVG(esame.voto), COUNT(esame.cc)
+FROM corso, esame, docente
+WHERE corso.cc=esame.cc
+AND corso.cd = docente.cd
+GROUP BY docente.cd ,docente.d_nome; -- Per essere più precisi si raggruppa sia per nome che per codice unico --  
+
+-- Nome docente, nome corso, numero di esami e votazioni --
+SELECT docente.cd, docente.d_nome, corso.cc, corso.c_nome, MIN(esame.voto), MAX(esame.voto), AVG(esame.voto), COUNT(esame.cc)
+FROM corso, esame, docente
+WHERE corso.cc=esame.cc
+AND corso.cd = docente.cd
+GROUP BY docente.cd ,docente.d_nome, corso.cc,corso.c_nome;
+
+-- Nome docente e corso tenuto--
+SELECT docente.cd, docente.d_nome, corso.cc, corso.c_nome
+FROM corso, docente
+WHERE corso.cd=docente.cd
+GROUP BY docente.cd ,docente.d_nome, corso.cc,corso.c_nome;
+
+-- Voto Massimo e minimo ottenuto per ogni studente escludendo il corso "C1" --
+SELECT esame.matr, studente.s_nome, MAX(esame.voto), MIN(esame.voto)
+FROM esame, studente
+WHERE esame.matr = studente.matr
+AND esame.cc != 'C1%'
+GROUP BY esame.matr, studente.s_nome;
+
+-- Stesso esercizio ma togliendo Fisica 1 -- 
+SELECT esame.matr, studente.s_nome, MAX(esame.voto), MIN(esame.voto)
+FROM esame, studente
+WHERE esame.matr = studente.matr
+AND esame.cc NOT IN (SELECT corso.cc
+                     FROM corso
+                     WHERE corso.c_nome LIKE 'Fisica%')  
+GROUP BY esame.matr, studente.s_nome;
+
+-- Esercizio con HAVING --
+SELECT esame.matr, studente.s_nome, MAX(esame.voto), MIN(esame.voto), AVG(esame.voto), COUNT(esame.voto)
+FROM esame, studente, corso
+WHERE esame.matr = studente.matr
+AND esame.cc = corso.cc  
+GROUP BY esame.matr, studente.s_nome
+HAVING COUNT(esame.voto) >1;
+
+-- Tutti quelli che hanno la media più alta di quella di Lucia Quaranta --
+
+SELECT studente.s_nome, AVG(esame.voto)
+FROM studente, esame
+WHERE esame.matr = studente.matr
+GROUP BY studente.s_nome
+HAVING AVG(esame.voto) > (SELECT AVG(esame.voto)
+                          FROM esame, studente
+                          WHERE esame.matr = studente.matr
+						  AND studente.s_nome = 'Lucia Quaranta');
